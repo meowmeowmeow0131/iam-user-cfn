@@ -79,13 +79,18 @@ Resources:
             Action:
               - sts:AssumeRole
             Resource:
-              - arn:aws:iam::${AWS::AccountId}:role/${RoleName}
+            - Fn::Join:
+              - ""
+              - - "arn:aws:iam::"
+                - !Ref AWS::AccountId
+                - ":role/"
+                - !GetAtt [IAMUserRole, RoleName]
       Path: /
 
-  IAMRole1:
+  IAMUserRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Ref RoleName
+      RoleName: !Sub ${AwsServiceName}-IAMRole
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -103,7 +108,7 @@ Resources:
   IAMUser:
     Type: AWS::IAM::User
     Properties:
-      UserName: ${AwsServiceName}-user
+      UserName: !Sub ${AwsServiceName}-user
       LoginProfile:
         Password: !Ref IAMUserPassword
       ManagedPolicyArns:
@@ -113,7 +118,7 @@ Resources:
   IAMAdmin:
     Type: AWS::IAM::User
     Properties:
-      UserName: ${AwsServiceName}-admin
+      UserName: !Sub ${AwsServiceName}-admin
       LoginProfile:
         Password: !Ref IAMUserPassword
 
