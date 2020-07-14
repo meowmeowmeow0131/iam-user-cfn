@@ -78,12 +78,11 @@ Resources:
             Effect: Allow
             Action:
               - sts:AssumeRole
-            Resource:
-            - Fn::Join:
-              - ""
-              - - "arn:aws:iam::"
+            Resource: !Join
+              - ''
+              - - 'arn:aws:iam::'
                 - !Ref AWS::AccountId
-                - ":role/"
+                - ':role/'
                 - !Sub ${AwsServiceName}-IAMRole
       Path: /
 
@@ -185,31 +184,29 @@ Resources:
 # ------------------------------------------------------------#
 Outputs:
   IAMUserUserName:
-    Description: "-"
+    Description: '-'
     Value: !Sub ${AwsServiceName}-user
   IAMUserLoginUrl:
-    Description: "-"
-    Value: 
-      - Fn::Join:
-        - ""
-        - - "https://"
-          - !Ref AWS::AccountId
-          - ".signin.aws.amazon.com/console"
+    Description: '-'
+    Value: !Join
+      - ''
+      - - 'https://'
+        - !Ref AWS::AccountId
+        - '.signin.aws.amazon.com/console'
   IAMUserPasswordSettingUrl:
-    Description: "-"
-    Value:
-      - Fn::Join:
-        - ""
-        - - "https://console.aws.amazon.com/iam/home?region="
-          - !Ref AWS::Region
-          - "#/users/"
-          - !Sub ${AwsServiceName}-user
-          - "?section=security_credentials"
+    Description: '-'
+    Value: !Join
+      - ''
+      - - 'https://console.aws.amazon.com/iam/home?region='
+        - !Ref AWS::Region
+        - '#/users/'
+        - !Sub ${AwsServiceName}-user
+        - '?section=security_credentials'
   IAMUserAccessKey:
-    Description: "-"
+    Description: '-'
     Value: !Ref IAMUserAccessKey
   IAMUserSecretKey:
-    Description: "-"
+    Description: '-'
     Value: !GetAtt IAMUserAccessKey.SecretAccessKey
   IAMUserCredentials:
     Description: Please set credential file.
@@ -223,31 +220,29 @@ Outputs:
     Value: !Sub |
       aws sts get-caller-identity --profile ${IAMUserRole}
   IAMAdminUserName:
-    Description: "-"
+    Description: '-'
     Value: !Sub ${AwsServiceName}-admin
   IAMAdminLoginUrl:
-    Description: "-"
-    Value: 
-      - Fn::Join:
-        - ""
-        - - "https://"
-          - !Ref AWS::AccountId
-          - ".signin.aws.amazon.com/console"
+    Description: '-'
+    Value: !Join
+      - ''
+      - - 'https://'
+        - !Ref AWS::AccountId
+        - '.signin.aws.amazon.com/console'
   IAMAdminPasswordSettingUrl:
-    Description: "-"
-    Value:
-      - Fn::Join:
-        - ""
-        - - "https://console.aws.amazon.com/iam/home?region="
-          - !Ref AWS::Region
-          - "#/users/"
-          - !Sub ${AwsServiceName}-user
-          - "?section=security_credentials"
+    Description: '-'
+    Value: !Join
+      - ''
+      - - 'https://console.aws.amazon.com/iam/home?region='
+        - !Ref AWS::Region
+        - '#/users/'
+        - !Sub ${AwsServiceName}-user
+        - '?section=security_credentials'
   IAMAdminAccessKey:
-    Description: "-"
+    Description: '-'
     Value: !Ref IAMAdminAccessKey
   IAMAdminSecretKey:
-    Description: "-"
+    Description: '-'
     Value: !GetAtt IAMAdminAccessKey.SecretAccessKey
   IAMAdminCredentials:
     Description: Please set credential file.
