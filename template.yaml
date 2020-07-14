@@ -171,14 +171,14 @@ Resources:
         aws_secret_access_key = ${IAMAdminAccessKey.SecretAccessKey}
 
   #
-  IAMRole1Config:
+  IAMRoleConfig:
     Type: AWS::SSM::Parameter
     Properties:
       Type: String
       Value: !Sub |
-        [profile ${IAMRole1}]
-        role_arn = ${IAMRole1.Arn}
-        source_profile = ${IAMUser1}
+        [profile ${IAMUserRole}]
+        role_arn = ${IAMUserRole.Arn}
+        source_profile = ${AwsServiceName}-user
 
 # ------------------------------------------------------------#
 # コンソール出力情報
