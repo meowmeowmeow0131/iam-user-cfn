@@ -211,7 +211,7 @@ Outputs:
   IAMUserCredentials:
     Description: Please set credential file.
     Value: !Sub |
-      aws secretsmanager get-secret-value --secret-id ${IAMUserSercret} --query 'SecretString' --output text >> ~/.aws/credentials
+      aws secretsmanager get-secret-value --secret-id ${IAMAdminSercret} --query 'SecretString' --output text >> ~/.aws/credentials
   IAMUserConfig:
     Description: Please set config file.
     Value: !Sub |
