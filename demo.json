@@ -1,0 +1,22 @@
+{
+    "StackName": "tutorial-demo-iam-user-cfn-template",
+    "Parameters": [{
+        "ParameterKey": "CompanyPrefix",
+        "ParameterValue": "ar"
+    },
+    {
+        "ParameterKey": "PJPrefix",
+        "ParameterValue": "tutorial"
+    },
+    {
+        "ParameterKey": "Environment",
+        "ParameterValue": "demo"
+    },
+    {
+        "ParameterKey": "AwsServiceName",
+        "ParameterValue": "cfn"
+    }],
+    "Capabilities": [
+        "CAPABILITY_NAMED_IAM"
+    ]
+}
