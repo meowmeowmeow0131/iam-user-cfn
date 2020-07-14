@@ -84,7 +84,7 @@ Resources:
               - - "arn:aws:iam::"
                 - !Ref AWS::AccountId
                 - ":role/"
-                - !GetAtt [IAMUserRole, RoleName]
+                - !GetAtt IAMUserRole.RoleName
       Path: /
 
   IAMUserRole:
@@ -210,7 +210,7 @@ Outputs:
     Value: !Ref IAMUserAccessKey
   IAMUserSecretKey:
     Description: "-"
-    Value: !GetAtt [IAMUserAccessKey, SecretAccessKey]
+    Value: !GetAtt IAMUserAccessKey.SecretAccessKey
   IAMUserCredentials:
     Description: Please set credential file.
     Value: !Sub |
@@ -248,7 +248,7 @@ Outputs:
     Value: !Ref IAMAdminAccessKey
   IAMAdminSecretKey:
     Description: "-"
-    Value: !GetAtt [IAMAdminAccessKey, SecretAccessKey]
+    Value: !GetAtt IAMAdminAccessKey.SecretAccessKey
   IAMAdminCredentials:
     Description: Please set credential file.
     Value: !Sub |
