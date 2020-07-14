@@ -84,7 +84,7 @@ Resources:
               - - "arn:aws:iam::"
                 - !Ref AWS::AccountId
                 - ":role/"
-                - !GetAtt IAMUserRole.RoleName
+                - !Sub ${AwsServiceName}-IAMRole
       Path: /
 
   IAMUserRole:
