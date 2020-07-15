@@ -93,7 +93,6 @@ Resources:
             Resource:
               - !Sub arn:aws:iam::${AWS::AccountId}:role/${AwsServiceName}-IAMRole
       Path: /
-    DependsOn: IAMAssumeRole
 
   IAMAssumeRole:
     Type: AWS::IAM::Role
