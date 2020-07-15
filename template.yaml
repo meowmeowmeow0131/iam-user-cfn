@@ -228,7 +228,7 @@ Outputs:
   IAMAdminSecretKey:
     Description: Please set config file.
     Value: !Sub |
-      aws ssm get-parameters --names ${IAMRoleConfig} --query 'Parameters[].Value' --output text >> ~/.aws/config
+      aws ssm get-parameters --names ${IAMAdminRoleConfig} --query 'Parameters[].Value' --output text >> ~/.aws/config
 
 # ------------------------------------------------------------#
 # IAM User Switch Infomation
