@@ -22,15 +22,22 @@ Metadata:
           default: IAM Configuration
         Parameters:
           - AwsServiceName
+          - IAMUserPassword
+          - IAMAdminPassword
     # パラメータラベル
     ParameterLabels:
       AwsServiceName:
         default: AWS Service Name
+      IAMUserPassword:
+        default: IAM Readonly User's Password
+      IAMAdminPassword:
+        default: IAM Readonly Admin's Password
 
 # ------------------------------------------------------------#
 # Input Parameters
 # ------------------------------------------------------------#
 Parameters:
+  # common parameters
   CompanyPrefix:
     Type: String
   PJPrefix:
@@ -48,7 +55,12 @@ Parameters:
   IAMUserPassword:
     NoEcho: 'true'
     Type: String
-    Description: New account password
+    MinLength: '1'
+    MaxLength: '41'
+    ConstraintDescription: the password must be between 1 and 41 characters
+  IAMAdminPassword:
+    NoEcho: 'true'
+    Type: String
     MinLength: '1'
     MaxLength: '41'
     ConstraintDescription: the password must be between 1 and 41 characters
@@ -57,20 +69,20 @@ Parameters:
   KmsKeyId:
     Type: String
 
+Conditions:
 # ------------------------------------------------------------#
 # 
 # ------------------------------------------------------------#
-Conditions:
   UseKmsKey: !Not [!Equals [!Ref KmsKeyId, ""]]
 
 Resources:
 # ------------------------------------------------------------#
-# IAM Role for IAM User
+# IAM Assume (only user)
 # ------------------------------------------------------------#
-  IAMManagedPolicyAssumeRole:
+  IAMAssumePolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
-      ManagedPolicyName: access-assume-role
+      ManagedPolicyName: !Sub ${AwsServiceName}-Assume-IAMPolicy
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -78,32 +90,30 @@ Resources:
             Effect: Allow
             Action:
               - sts:AssumeRole
-            Resource: !Join
-              - ''
-              - - 'arn:aws:iam::'
-                - !Ref AWS::AccountId
-                - ':role/'
-                - !Sub ${AwsServiceName}-IAMRole
+            Resource:
+              - !Sub arn:aws:iam::${AWS::AccoutId}:role/${AwsServiceName}-IAMRole
       Path: /
+    DependsOn: IAMAssumeRole
 
-  IAMUserRole:
+  IAMAssumeRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${AwsServiceName}-IAMRole
+      RoleName: !Sub ${AwsServiceName}-Assume-IAMRole
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
           - Effect: Allow
-            #Principal: !Sub "AWS":"${IAMUser1.Arn}"
+            Principal:
+              AWS: !GetAtt IAMUser.Arn
             Action:
               - sts:AssumeRole
       Path: /
       MaxSessionDuration: 3600
+    DependsOn: IAMUser
 
 # ------------------------------------------------------------#
 # IAM User
 # ------------------------------------------------------------#
-  # 一般ユーザ用
   IAMUser:
     Type: AWS::IAM::User
     Properties:
@@ -111,20 +121,18 @@ Resources:
       LoginProfile:
         Password: !Ref IAMUserPassword
       ManagedPolicyArns:
-        - !Ref IAMManagedPolicyAssumeRole
+        - !Ref IAMAssumePolicy
 
-  # 管理者ユーザ用
   IAMAdmin:
     Type: AWS::IAM::User
     Properties:
       UserName: !Sub ${AwsServiceName}-admin
       LoginProfile:
-        Password: !Ref IAMUserPassword
+        Password: !Ref IAMAdminPassword
 
 # ------------------------------------------------------------#
 # IAM User GroupAddition
 # ------------------------------------------------------------#
-  # 一般ユーザ用
   Users:
     Type: AWS::IAM::UserToGroupAddition
     Properties:
@@ -132,7 +140,6 @@ Resources:
       Users:
         - !Ref IAMUser
 
-  # 管理者ユーザ用
   Admins:
     Type: AWS::IAM::UserToGroupAddition
     Properties:
@@ -143,49 +150,52 @@ Resources:
 # ------------------------------------------------------------#
 # IAM AccessKey
 # ------------------------------------------------------------#
-  # 一般ユーザ用
   IAMUserAccessKey:
     Type: AWS::IAM::AccessKey
     Properties:
       UserName: !Ref IAMUser
 
-  # 管理者ユーザ用
   IAMAdminAccessKey:
     Type: AWS::IAM::AccessKey
     Properties:
       UserName: !Ref IAMAdmin
 
 # ------------------------------------------------------------#
-# IAM AccessKey Retain
+# IAM Credential and IAM Role Config Retain (only admin)
 # ------------------------------------------------------------#
-  # 管理者ユーザ用
-  IAMAdminSercret:
+  IAMAdminCredential:
     Type: AWS::SecretsManager::Secret
     Properties:
-      Name: !Sub ${AwsServiceName}-admin-credentials
+      Name: !Sub ${AwsServiceName}-admin-credential
       KmsKeyId: !If [UseKmsKey, !Ref KmsKeyId, !Ref "AWS::NoValue"]
       SecretString: !Sub |
         [${AwsServiceName}-admin]
         aws_access_key_id = ${IAMAdminAccessKey}
         aws_secret_access_key = ${IAMAdminAccessKey.SecretAccessKey}
 
-  #
-  IAMRoleConfig:
+  IAMAdminRoleConfig:
     Type: AWS::SSM::Parameter
     Properties:
       Type: String
       Value: !Sub |
-        [profile ${IAMUserRole}]
-        role_arn = ${IAMUserRole.Arn}
+        [profile ${IAMAssumeRole}]
+        role_arn = ${IAMAssumeRole.Arn}
         source_profile = ${AwsServiceName}-user
 
-# ------------------------------------------------------------#
-# コンソール出力情報
-# ------------------------------------------------------------#
 Outputs:
+# ------------------------------------------------------------#
+# Arn Infomation
+# ------------------------------------------------------------#
   IAMUserUserName:
     Description: '-'
     Value: !Sub ${AwsServiceName}-user
+  IAMAdminUserName:
+    Description: '-'
+    Value: !Sub ${AwsServiceName}-admin
+
+# ------------------------------------------------------------#
+# IAM User Infomation
+# ------------------------------------------------------------#
   IAMUserLoginUrl:
     Description: '-'
     Value: !Join
@@ -202,49 +212,29 @@ Outputs:
         - '#/users/'
         - !Sub ${AwsServiceName}-user
         - '?section=security_credentials'
+
+# ------------------------------------------------------------#
+# IAM User AccessKey Infomation
+# ------------------------------------------------------------#
   IAMUserAccessKey:
-    Description: '-'
+    Description: Please 
     Value: !Ref IAMUserAccessKey
+  IAMAdminAccessKey:
+    Description: Please set credential file.
+    Value: !Sub |
+      aws secretsmanager get-secret-value --secret-id ${IAMAdminCredential} --query 'SecretString' --output text >> ~/.aws/credentials  
   IAMUserSecretKey:
     Description: '-'
     Value: !GetAtt IAMUserAccessKey.SecretAccessKey
-  IAMUserCredentials:
-    Description: Please set credential file.
-    Value: !Sub |
-      aws secretsmanager get-secret-value --secret-id ${IAMAdminSercret} --query 'SecretString' --output text >> ~/.aws/credentials
-  IAMUserConfig:
+  IAMAdminSecretKey:
     Description: Please set config file.
     Value: !Sub |
       aws ssm get-parameters --names ${IAMRoleConfig} --query 'Parameters[].Value' --output text >> ~/.aws/config
+
+# ------------------------------------------------------------#
+# IAM User Switch Infomation
+# ------------------------------------------------------------#
   IAMUserSwitchRole:
     Value: !Sub |
-      aws sts get-caller-identity --profile ${IAMUserRole}
-  IAMAdminUserName:
-    Description: '-'
-    Value: !Sub ${AwsServiceName}-admin
-  IAMAdminLoginUrl:
-    Description: '-'
-    Value: !Join
-      - ''
-      - - 'https://'
-        - !Ref AWS::AccountId
-        - '.signin.aws.amazon.com/console'
-  IAMAdminPasswordSettingUrl:
-    Description: '-'
-    Value: !Join
-      - ''
-      - - 'https://console.aws.amazon.com/iam/home?region='
-        - !Ref AWS::Region
-        - '#/users/'
-        - !Sub ${AwsServiceName}-user
-        - '?section=security_credentials'
-  IAMAdminAccessKey:
-    Description: '-'
-    Value: !Ref IAMAdminAccessKey
-  IAMAdminSecretKey:
-    Description: '-'
-    Value: !GetAtt IAMAdminAccessKey.SecretAccessKey
-  IAMAdminCredentials:
-    Description: Please set credential file.
-    Value: !Sub |
-      aws secretsmanager get-secret-value --secret-id ${IAMAdminSercret} --query 'SecretString' --output text >> ~/.aws/credentials
+      aws sts get-caller-identity --profile ${IAMUser}
+      aws sts get-caller-identity --profile ${IAMAssumeRole}
